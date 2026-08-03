@@ -1,0 +1,21 @@
+namespace PrintAgent
+{
+    public static class EventBus
+    {
+        // Tetiklendiğinde UI tarafında (Program.cs) ikon rengini değiştirir
+        public static event Action<bool>? ConnectionStateChanged;
+        
+        // Tetiklendiğinde UI tarafında (Program.cs) bildirim baloncuğu gösterir
+        public static event Action<string, string>? ActivityLogged;
+
+        public static void NotifyConnectionState(bool isConnected)
+        {
+            ConnectionStateChanged?.Invoke(isConnected);
+        }
+
+        public static void NotifyActivity(string title, string message)
+        {
+            ActivityLogged?.Invoke(title, message);
+        }
+    }
+}
