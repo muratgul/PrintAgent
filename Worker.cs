@@ -18,8 +18,8 @@ public class Worker : BackgroundService
     protected async override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         // Merkezi Sunucunun (GenelIslemlerApi01) SignalR Hub adresi
-        //var hubUrl = "http://localhost:5200/printhub";
-        var hubUrl = "http://localhost:5193/printhub";
+        var hubUrl = "http://localhost:5200/printhub";
+        //var hubUrl = "http://localhost:5193/printhub";
 
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(hubUrl)
