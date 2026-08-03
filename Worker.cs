@@ -7,19 +7,20 @@ namespace PrintAgent;
 public class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
+    private readonly IConfiguration _configuration;
     private HubConnection? _hubConnection;
     private readonly string _agentName = Environment.MachineName; // Or configure via appsettings.json
 
-    public Worker(ILogger<Worker> logger)
+    public Worker(ILogger<Worker> logger, IConfiguration configuration)
     {
         _logger = logger;
+        _configuration = configuration;
     }
 
     protected async override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         // Merkezi Sunucunun (GenelIslemlerApi01) SignalR Hub adresi
-        var hubUrl = "http://localhost:5200/printhub";
-        //var hubUrl = "http://localhost:5193/printhub";
+        var hubUrl = _configuration.GetValue<string>("AgentSettings:HubUrl") ?? "http://localhost:5200/printhub";
 
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(hubUrl)

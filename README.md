@@ -35,11 +35,15 @@ Ayarlar dosyası üzerinden loglama seviyesini ve bildirimleri özelleştirebili
     ]
   },
   "AgentSettings": {
-    "ShowNotifications": true 
+    "ShowNotifications": true,
+    "HubUrl": "http://localhost:5200/printhub",
+    "AutoStart": true
   }
 }
 ```
-*Gelen yazdırma bildirimlerini kapatmak isterseniz `ShowNotifications` değerini `false` yapabilirsiniz.*
+* **`ShowNotifications`**: Gelen yazdırma bildirimlerini kapatmak isterseniz değerini `false` yapabilirsiniz.
+* **`HubUrl`**: Ajanın bağlanacağı merkezi sunucunun SignalR adresini belirler.
+* **`AutoStart`**: Uygulamanın Windows başladığında otomatik olarak çalışıp çalışmayacağını ayarlar (`true`/`false`).
 
 ## Teknik Altyapı
 - **.NET 10.0** (Worker Service & Windows Forms altyapısı melez olarak kullanılmıştır)

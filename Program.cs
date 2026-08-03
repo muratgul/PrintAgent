@@ -26,11 +26,12 @@ namespace PrintAgent
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            // Başlangıçta çalışması için Registry ayarı
-            SetStartup();
-
             // Host'u arka planda başlat
             var builder = Host.CreateApplicationBuilder(args);
+            
+            // Başlangıçta çalışması için Registry ayarı
+            bool autoStart = builder.Configuration.GetValue<bool>("AgentSettings:AutoStart", true);
+            SetStartup(autoStart);
             
             // Serilog konfigürasyonu
             Log.Logger = new LoggerConfiguration()
@@ -111,7 +112,7 @@ namespace PrintAgent
             return Icon.FromHandle(bmp.GetHicon());
         }
 
-        private static void SetStartup()
+        private static void SetStartup(bool enable)
         {
             try
             {
@@ -124,7 +125,14 @@ namespace PrintAgent
                 {
                     if (key != null)
                     {
-                        key.SetValue(appName, "\"" + exePath + "\"");
+                        if (enable)
+                        {
+                            key.SetValue(appName, "\"" + exePath + "\"");
+                        }
+                        else
+                        {
+                            key.DeleteValue(appName, false);
+                        }
                     }
                 }
             }
