@@ -70,12 +70,18 @@ Yazıcıları listelemek ve yazdırma emri göndermek için kullanacağımız we
 3. Uygulamayı başlatmak için `npm run dev` komutunu çalıştırın.
 4. Tarayıcınızda (genelde `http://localhost:5173`) uygulamayı açın.
 
+### 4. ExampleWinFormsClient (Alternatif Masaüstü Paneli) Başlatılması
+Web arayüzü yerine masaüstü uygulamasını tercih ederseniz bu projeyi kullanabilirsiniz.
+1. Terminalde `ExampleWinFormsClient` klasörüne gidin.
+2. `dotnet run` komutunu çalıştırın (Veya Visual Studio üzerinden projeyi başlatın).
+3. Açılan Windows Forms ekranından ajanları yönetebilirsiniz.
+
 ### 🎯 Test Adımları
-- Web ekranını açtığınızda **"Bağlı Ajanlar"** listesinde kendi bilgisayarınızın adını göreceksiniz.
+- İstemci ekranını (Web veya Masaüstü) açtığınızda **"Bağlı Ajanlar"** listesinde kendi bilgisayarınızın adını göreceksiniz.
 - Ajanın üzerine tıkladığınızda SignalR üzerinden ajana istek gider ve o bilgisayardaki **Kurulu Yazıcıların Listesi** çekilir.
 - Yazıcı seçimi yapıp, düz metin, Base64 formatında belge veya internetten indireceği bir PDF linki (URL) vererek **"Belgeyi Yazdır"** butonuna basın.
 - PrintAgent belgenizi arka planda işleyecek ve seçtiğiniz yazıcıya (örneğin _Microsoft Print to PDF_ seçerek test edebilirsiniz) gönderecektir.
-- İşlem bittiğinde başarılı/başarısız sonucu Web paneline anlık (Real-Time) olarak yansıyacaktır.
+- İşlem bittiğinde başarılı/başarısız sonucu panele anlık (Real-Time) olarak yansıyacaktır.
 
 ---
 
