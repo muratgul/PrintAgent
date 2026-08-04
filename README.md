@@ -27,7 +27,7 @@ graph LR
 
 ## 🚀 PrintAgent Özellikleri (İstemci Tarafı)
 
-- **Gelişmiş Format Desteği:** PDF (PdfiumViewer ile native), Word (.doc, .docx), Excel (.xls, .xlsx), Metin Dosyaları (.txt) destekler. Veri `Base64`, `URL` veya `Data URI` formatında gelebilir. Sihirli byte'larına (Magic Numbers) bakarak otomatik algılar ve Windows `ShellExecute` (PrintTo) özelliği ile arka planda sessizce yazdırır.
+- **Gelişmiş Format Desteği:** PDF (PdfiumViewer ile native), Resim dosyaları (.png, .jpg, .bmp, .gif - System.Drawing ile native ortalanmış çıktı), Word (.doc, .docx), Excel (.xls, .xlsx) ve Metin Dosyaları (.txt) destekler. Veri `Base64`, `URL` veya `Data URI` formatında gelebilir. Gelen verinin sihirli byte'larına (Magic Numbers) bakarak formatını dinamik olarak algılar, uzantısı eksik olsa dahi tespit edip native altyapı veya Windows `ShellExecute` ile arka planda sessizce yazdırır. Düz metinleri yanlışlıkla dosya olarak okumamak için akıllı karakter doğrulaması yapar.
 - **Kopmaz Bağlantı (Auto-Reconnect):** SignalR üzerinden otomatik yeniden bağlanma stratejisi uygular. Manuel fallback döngüsü de mevcuttur.
 - **Tekli Çalışma (Single Instance):** Mutex yapısı ile uygulamanın aynı bilgisayarda yanlışlıkla birden fazla kez açılması önlenir.
 - **Hata Toleransı (Auto-Restart):** Kritik hatalarda (`UnhandledException`) çöküp yok olmak yerine sessizce kendi kendini yeniden başlatır.
@@ -79,8 +79,8 @@ Yazıcıları listelemek ve yazdırma emri göndermek için kullanacağımız we
 
 ## 💻 Teknik Altyapı Notları
 
-- **PrintAgent:** .NET 10.0 (Worker Service & WinForms melezi), SignalR Client, Serilog, PdfiumViewer.
-- **ExamplePrintHub:** .NET 10.0 Web API, SignalR Server, CORS yapılandırması.
+- **PrintAgent:** .NET 9.0 (Worker Service & WinForms melezi), SignalR Client, Serilog, PdfiumViewer.
+- **ExamplePrintHub:** .NET 9.0 Web API, SignalR Server, CORS yapılandırması.
 - **ExampleVueClient:** Vite, Vue 3, Composition API, `@microsoft/signalr`, Modern Glassmorphism CSS.
 
 _Not: Proje içerisindeki örnek klasörleri (.NET derlemesinde çakışma olmaması için) ana `PrintAgent.csproj` içerisinden `<DefaultItemExcludes>` kullanılarak hariç tutulmuştur._
