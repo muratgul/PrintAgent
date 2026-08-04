@@ -7,7 +7,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-PrintAgent-805e36c3-e3b6-4695-aeec-80f286e48369</UserSecretsId>
     <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>favicon.ico</ApplicationIcon>
+    <DefaultItemExcludes>$(DefaultItemExcludes);ExamplePrintHub\**;ExampleVueClient\**</DefaultItemExcludes>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="favicon.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.10" />
