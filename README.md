@@ -11,8 +11,10 @@ Bu depo (repository) sadece **PrintAgent** istemcisini değil, aynı zamanda sis
 Sistem 3 ana bileşenden oluşur:
 
 1. **PrintAgent (Windows Client):** Yazdırma işlemini yapacak olan bilgisayara kurulan, arka planda çalışan ve doğrudan yazıcılara komut gönderen servis.
-2. **ExamplePrintHub (SignalR Server):** Tüm PrintAgent'ların bağlandığı, onları dinleyen ve Vue uygulamasından gelen komutları ilgili ajanlara yönlendiren köprü (Hub) sunucu.
-3. **ExampleVueClient (Web UI):** Tüm sisteme hakim olan kontrol paneli. Bağlı olan ajanları görür, ajanların yazıcı listesini çeker ve uzaktan yazdırma komutlarını tetikler.
+2. **ExamplePrintHub (SignalR Server):** Tüm PrintAgent'ların bağlandığı, onları dinleyen ve arayüzlerden gelen komutları ilgili ajanlara yönlendiren köprü (Hub) sunucu.
+3. **Yönetim İstemcileri (Web veya Masaüstü):**
+   - **ExampleVueClient (Web UI):** Tüm sisteme hakim olan web tabanlı kontrol paneli. Bağlı olan ajanları görür, ajanların yazıcı listesini çeker ve uzaktan yazdırma komutlarını tetikler.
+   - **ExampleWinFormsClient (Masaüstü UI):** Web paneline alternatif olarak işlemleri masaüstü uygulamasından (Windows Forms) tetiklemek ve yönetmek isteyenler için örnek istemci uygulaması.
 
 ```mermaid
 graph LR
@@ -82,5 +84,6 @@ Yazıcıları listelemek ve yazdırma emri göndermek için kullanacağımız we
 - **PrintAgent:** .NET 9.0 (Worker Service & WinForms melezi), SignalR Client, Serilog, PdfiumViewer.
 - **ExamplePrintHub:** .NET 9.0 Web API, SignalR Server, CORS yapılandırması.
 - **ExampleVueClient:** Vite, Vue 3, Composition API, `@microsoft/signalr`, Modern Glassmorphism CSS.
+- **ExampleWinFormsClient:** .NET (Windows Forms), SignalR Client.
 
 _Not: Proje içerisindeki örnek klasörleri (.NET derlemesinde çakışma olmaması için) ana `PrintAgent.csproj` içerisinden `<DefaultItemExcludes>` kullanılarak hariç tutulmuştur._
