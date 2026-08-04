@@ -9,7 +9,7 @@ public class Worker : BackgroundService
     private readonly ILogger<Worker> _logger;
     private readonly IConfiguration _configuration;
     private HubConnection? _hubConnection;
-    private readonly string _agentName = Environment.MachineName; // Or configure via appsettings.json
+    private readonly string _agentName = Environment.MachineName;
 
     public Worker(ILogger<Worker> logger, IConfiguration configuration)
     {
