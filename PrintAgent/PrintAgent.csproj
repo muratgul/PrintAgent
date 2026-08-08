@@ -7,12 +7,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-PrintAgent-805e36c3-e3b6-4695-aeec-80f286e48369</UserSecretsId>
     <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
     <ApplicationIcon>favicon.ico</ApplicationIcon>
-    <DefaultItemExcludes>$(DefaultItemExcludes);ExamplePrintHub\**;ExampleVueClient\**;ExampleWinFormsClient\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="favicon.ico" />
+    <Content Include="favicon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

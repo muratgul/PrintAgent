@@ -2,8 +2,17 @@ using ExamplePrintHub.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Limits.MaxRequestBodySize = 500L * 1024 * 1024; // 500 MB
+});
+
 // Add services to the container.
-builder.Services.AddSignalR();
+builder.Services.AddSignalR(options =>
+{
+    options.MaximumReceiveMessageSize = 500L * 1024 * 1024; // 500 MB
+    options.EnableDetailedErrors = true;
+});
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>

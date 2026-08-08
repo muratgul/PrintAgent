@@ -1,5 +1,0 @@
-<Solution>
-  <Project Path="PrintAgent.csproj" />
-  <Project Path="ExamplePrintHub\ExamplePrintHub.csproj" />
-  <Project Path="ExampleWinFormsClient\PrintAgentWinForms.csproj" />
-</Solution>

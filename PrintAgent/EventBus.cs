@@ -8,8 +8,11 @@ namespace PrintAgent
         // Tetiklendiğinde UI tarafında (Program.cs) bildirim baloncuğu gösterir
         public static event Action<string, string>? ActivityLogged;
 
+        public static bool IsConnected { get; private set; }
+
         public static void NotifyConnectionState(bool isConnected)
         {
+            IsConnected = isConnected;
             ConnectionStateChanged?.Invoke(isConnected);
         }
 

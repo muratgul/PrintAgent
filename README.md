@@ -1,4 +1,4 @@
-# PrintAgent & Merkezi Yönetim Sistemi
+# PrintAgent & Merkezi Yönetim Sistemi (Central Management System)
 
 PrintAgent, merkezi bir sunucudan (SignalR aracılığıyla) gelen yazdırma komutlarını dinleyen ve istenilen belgeyi doğrudan hedef bilgisayarın yazıcılarına gönderen, 7/24 çalışacak şekilde tasarlanmış (Always-On) bir arka plan Windows servis uygulamasıdır. 
 
@@ -6,90 +6,75 @@ Bu depo (repository) sadece **PrintAgent** istemcisini değil, aynı zamanda sis
 
 ---
 
-## 🏗️ Sistem Mimarisi
+## 🇹🇷 Türkçe 
+
+### 🏗️ Sistem Mimarisi
 
 Sistem 3 ana bileşenden oluşur:
 
-1. **PrintAgent (Windows Client):** Yazdırma işlemini yapacak olan bilgisayara kurulan, arka planda çalışan ve doğrudan yazıcılara komut gönderen servis.
+1. **PrintAgent (Windows Client):** Yazdırma işlemini yapacak olan bilgisayara kurulan, WinForms (Tray Icon) veya WPF (Pencere) modunda çalışabilen servis.
 2. **ExamplePrintHub (SignalR Server):** Tüm PrintAgent'ların bağlandığı, onları dinleyen ve arayüzlerden gelen komutları ilgili ajanlara yönlendiren köprü (Hub) sunucu.
 3. **Yönetim İstemcileri (Web veya Masaüstü):**
-   - **ExampleVueClient (Web UI):** Tüm sisteme hakim olan web tabanlı kontrol paneli. Bağlı olan ajanları görür, ajanların yazıcı listesini çeker ve uzaktan yazdırma komutlarını tetikler.
+   - **ExampleVueClient (Web UI):** Tüm sisteme hakim olan web tabanlı kontrol paneli. 
    - **ExampleWinFormsClient (Masaüstü UI):** Web paneline alternatif olarak işlemleri masaüstü uygulamasından (Windows Forms) tetiklemek ve yönetmek isteyenler için örnek istemci uygulaması.
 
-```mermaid
-graph LR
-    UI[Vue 3 Yönetim Paneli] <-->|SignalR| Hub((.NET Core SignalR Hub))
-    Hub <-->|SignalR| Agent1[PrintAgent - PC 1]
-    Hub <-->|SignalR| Agent2[PrintAgent - PC 2]
-    Agent1 --> Printer1(Yazıcı A)
-    Agent2 --> Printer2(Yazıcı B)
+### 🚀 Yeni Eklenen Özellikler & Güncellemeler (v2.0)
+
+- **WPF Arayüz Desteği:** İstenildiğinde sadece Sistem Tepsisinde (Tray) çalışmak yerine, ayarların (`appsettings.json`'da `UIFramework` ayarını `WPF` yaparak) modern bir pencere üzerinden yönetilebilmesi sağlandı.
+- **Kullanıcı Dostu Ayar Kontrolleri (WPF):** 
+  - **Tepsiye Küçült (Minimize to Tray):** Pencere kapatıldığında uygulamanın sistem tepsisine gizlenmesini sağlar.
+  - **Otomatik Başlat (Auto Start):** İşletim sistemi başladığında uygulamanın da arka planda çalışmasını sağlar (Registry üzerinden yönetilir).
+  - **Bildirimleri Göster (Show Notifications):** Bağlantı kopmaları ve yeniden bağlanma gibi durumları sağ alt köşede Windows bildirim balonu olarak gösterir.
+- **Büyük Boyutlu Dosya Aktarımı Desteği:** Hub Server (`ExamplePrintHub`) üzerinde yer alan `MaxRequestBodySize` ve SignalR `MaximumReceiveMessageSize` limitleri **500 MB**'a çıkartıldı.
+- **Timeout (Zaman Aşımı) ve Yarış Durumu (Race Condition) İyileştirmeleri:** Client bağlantılarında 5 dakikalık tolerans (ServerTimeout) eklendi. Ayrıca uygulamanın açılışı esnasında hızlıca sunucuya bağlandığında arayüz ikonunun kırmızı (bağlı değil) kalmasına neden olan yarış durumu (Race Condition) giderildi.
+
+---
+
+## 🇬🇧 English
+
+### 🏗️ System Architecture
+
+The system consists of 3 main components:
+
+1. **PrintAgent (Windows Client):** A service installed on the target machine that performs the printing operations. It can run in WinForms (Tray Icon) or WPF (Window) mode.
+2. **ExamplePrintHub (SignalR Server):** The bridge (Hub) server that all PrintAgents connect to. It listens for commands from clients and routes them to the appropriate agents.
+3. **Management Clients (Web or Desktop):**
+   - **ExampleVueClient (Web UI):** A comprehensive web-based control panel to monitor the system.
+   - **ExampleWinFormsClient (Desktop UI):** An alternative desktop application (Windows Forms) to trigger and manage operations.
+
+### 🚀 New Features & Updates (v2.0)
+
+- **WPF UI Support:** In addition to the System Tray mode, you can now manage settings via a modern window by setting `UIFramework` to `WPF` in `appsettings.json`.
+- **User-Friendly Settings Controls (WPF):** 
+  - **Minimize to Tray:** Hides the application to the system tray when the window is closed or minimized.
+  - **Auto Start:** Allows the application to automatically start in the background when the OS boots up (managed via Registry).
+  - **Show Notifications:** Displays Windows balloon notifications in the system tray for events like disconnections and reconnections.
+- **Large File Transfer Support:** The `MaxRequestBodySize` and SignalR `MaximumReceiveMessageSize` limits on the Hub Server (`ExamplePrintHub`) have been increased to **500 MB** to allow printing of very large files.
+- **Timeout and Race Condition Improvements:** A 5-minute tolerance (`ServerTimeout`) was added to client connections to prevent timeout issues when transferring large files. Additionally, a race condition bug where the UI icon would remain red (disconnected) during an extremely fast connection on startup has been fixed.
+
+---
+
+## 🛠️ Kurulum ve Test / Setup & Testing
+
+**1. ExamplePrintHub**
+```bash
+cd ExamplePrintHub
+dotnet run
+```
+**2. PrintAgent**
+Check `appsettings.json` for `HubUrl` and `UIFramework` settings, then run:
+```bash
+cd PrintAgent
+dotnet run
+```
+**3. ExampleVueClient**
+```bash
+cd ExampleVueClient
+npm install
+npm run dev
 ```
 
 ---
 
-## 🚀 PrintAgent Özellikleri (İstemci Tarafı)
-
-- **Gelişmiş Format Desteği:** PDF (PdfiumViewer ile native), Resim dosyaları (.png, .jpg, .bmp, .gif - System.Drawing ile native ortalanmış çıktı), Word (.doc, .docx), Excel (.xls, .xlsx) ve Metin Dosyaları (.txt) destekler. Veri `Base64`, `URL` veya `Data URI` formatında gelebilir. Gelen verinin sihirli byte'larına (Magic Numbers) bakarak formatını dinamik olarak algılar, uzantısı eksik olsa dahi tespit edip native altyapı veya Windows `ShellExecute` ile arka planda sessizce yazdırır. Düz metinleri yanlışlıkla dosya olarak okumamak için akıllı karakter doğrulaması yapar.
-- **Kopmaz Bağlantı (Auto-Reconnect):** SignalR üzerinden otomatik yeniden bağlanma stratejisi uygular. Manuel fallback döngüsü de mevcuttur.
-- **Tekli Çalışma (Single Instance):** Mutex yapısı ile uygulamanın aynı bilgisayarda yanlışlıkla birden fazla kez açılması önlenir.
-- **Hata Toleransı (Auto-Restart):** Kritik hatalarda (`UnhandledException`) çöküp yok olmak yerine sessizce kendi kendini yeniden başlatır.
-- **Görsel Durum & Bildirimler:** Sistem tepsisinde (System Tray) bağlantı durumunu gösterir (Yeşil/Kırmızı). Yazdırma işlemleri Windows Balon Bildirimi olarak sağ alta düşer.
-- **Fiziksel Loglama:** `Serilog` ile loglar disk üzerinde (`Logs/`) saklanır, 7 günlük rotasyon uygulanır.
-
----
-
-## 🛠️ Kurulum ve Test (Örnek Projelerin Çalıştırılması)
-
-Tüm sistemi kendi bilgisayarınızda ayağa kaldırmak ve test etmek için sırasıyla aşağıdaki adımları izleyin:
-
-### 1. ExamplePrintHub (Merkezi Sunucu) Başlatılması
-Vue uygulamasının ve Ajanların haberleşeceği .NET Web API projesidir.
-1. Terminalde `ExamplePrintHub` klasörüne gidin.
-2. `dotnet run` komutunu çalıştırın.
-3. Sunucu `http://localhost:5200` portundan ayağa kalkacak ve `/printhub` endpoint'inde bağlantıları beklemeye başlayacaktır.
-
-### 2. PrintAgent (İstemci) Başlatılması
-Yazıcıların bulunduğu bilgisayarda (şu an test için kendi bilgisayarınızda) çalışacak ajandır.
-1. Ana klasördeki `PrintAgent.csproj` uygulamasının ayarlarını `appsettings.json` dosyasından kontrol edin:
-   ```json
-   {
-     "AgentSettings": {
-       "ShowNotifications": true,
-       "HubUrl": "http://localhost:5200/printhub",
-       "AutoStart": false
-     }
-   }
-   ```
-2. Ana klasörde (veya Visual Studio üzerinden) projeyi çalıştırın (`dotnet run`).
-3. Sağ alt köşede Windows tepsisinde (System Tray) **Yeşil ikon** belirdiğinde Ajan başarıyla sunucuya (Hub'a) bağlanmış demektir.
-
-### 3. ExampleVueClient (Yönetim Paneli) Başlatılması
-Yazıcıları listelemek ve yazdırma emri göndermek için kullanacağımız web arayüzüdür.
-1. Terminalde `ExampleVueClient` klasörüne gidin.
-2. Bağımlılıkları yüklemek için `npm install` komutunu çalıştırın.
-3. Uygulamayı başlatmak için `npm run dev` komutunu çalıştırın.
-4. Tarayıcınızda (genelde `http://localhost:5173`) uygulamayı açın.
-
-### 4. ExampleWinFormsClient (Alternatif Masaüstü Paneli) Başlatılması
-Web arayüzü yerine masaüstü uygulamasını tercih ederseniz bu projeyi kullanabilirsiniz.
-1. Terminalde `ExampleWinFormsClient` klasörüne gidin.
-2. `dotnet run` komutunu çalıştırın (Veya Visual Studio üzerinden projeyi başlatın).
-3. Açılan Windows Forms ekranından ajanları yönetebilirsiniz.
-
-### 🎯 Test Adımları
-- İstemci ekranını (Web veya Masaüstü) açtığınızda **"Bağlı Ajanlar"** listesinde kendi bilgisayarınızın adını göreceksiniz.
-- Ajanın üzerine tıkladığınızda SignalR üzerinden ajana istek gider ve o bilgisayardaki **Kurulu Yazıcıların Listesi** çekilir.
-- Yazıcı seçimi yapıp, düz metin, Base64 formatında belge veya internetten indireceği bir PDF linki (URL) vererek **"Belgeyi Yazdır"** butonuna basın.
-- PrintAgent belgenizi arka planda işleyecek ve seçtiğiniz yazıcıya (örneğin _Microsoft Print to PDF_ seçerek test edebilirsiniz) gönderecektir.
-- İşlem bittiğinde başarılı/başarısız sonucu panele anlık (Real-Time) olarak yansıyacaktır.
-
----
-
-## 💻 Teknik Altyapı Notları
-
-- **PrintAgent:** .NET 9.0 (Worker Service & WinForms melezi), SignalR Client, Serilog, PdfiumViewer.
-- **ExamplePrintHub:** .NET 9.0 Web API, SignalR Server, CORS yapılandırması.
-- **ExampleVueClient:** Vite, Vue 3, Composition API, `@microsoft/signalr`, Modern Glassmorphism CSS.
-- **ExampleWinFormsClient:** .NET (Windows Forms), SignalR Client.
-
 _Not: Proje içerisindeki örnek klasörleri (.NET derlemesinde çakışma olmaması için) ana `PrintAgent.csproj` içerisinden `<DefaultItemExcludes>` kullanılarak hariç tutulmuştur._
+_Note: Sample folders within the project are excluded from the main `PrintAgent.csproj` using `<DefaultItemExcludes>` to prevent build conflicts._

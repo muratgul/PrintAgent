@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.SignalR.Client;
 using System.Diagnostics;
 using System.Drawing.Printing;
+using System.IO;
+using System.Net.Http;
 
 namespace PrintAgent;
 
@@ -26,6 +28,9 @@ public class Worker : BackgroundService
             .WithUrl(hubUrl)
             .WithAutomaticReconnect(new[] { TimeSpan.Zero, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(30) })
             .Build();
+
+        _hubConnection.ServerTimeout = TimeSpan.FromMinutes(5);
+        _hubConnection.HandshakeTimeout = TimeSpan.FromMinutes(1);
 
         _hubConnection.Closed += async (error) =>
         {

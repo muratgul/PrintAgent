@@ -107,10 +107,13 @@ namespace PrintAgentWinForms
                 .WithUrl(url)
                 .WithAutomaticReconnect()
                 .Build();
+            
+            _connection.ServerTimeout = TimeSpan.FromMinutes(5);
+            _connection.HandshakeTimeout = TimeSpan.FromMinutes(1);
 
-            _connection.On<List<string>>("ActiveAgentsList", (agents) =>
+            _connection.On<IEnumerable<string>>("AgentsUpdated", (agents) =>
             {
-                Log($"Received ActiveAgentsList: {string.Join(", ", agents)}");
+                Log($"Received AgentsUpdated: {string.Join(", ", agents)}");
                 this.Invoke(new Action(() =>
                 {
                     cmbAgents.Items.Clear();
@@ -122,9 +125,9 @@ namespace PrintAgentWinForms
                 }));
             });
 
-            _connection.On<string, List<string>>("ReceivePrintersList", (sourceAgent, printers) =>
+            _connection.On<string, List<string>>("ReceivePrinters", (sourceAgent, printers) =>
             {
-                Log($"Received ReceivePrintersList from {sourceAgent}: {string.Join(", ", printers)}");
+                Log($"Received Printers from {sourceAgent}: {string.Join(", ", printers)}");
                 this.Invoke(new Action(() =>
                 {
                     cmbPrinters.Items.Clear();
@@ -141,10 +144,10 @@ namespace PrintAgentWinForms
                 Log($"Print Error for agent {targetAgent}: {error}");
             });
 
-            _connection.On<bool, string, string>("PrintResult", (isSuccess, docName, message) =>
+            _connection.On<string, bool, string, string>("PrintStatusUpdated", (logId, isSuccess, message, docName) =>
             {
                 string status = isSuccess ? "Success" : "Failed";
-                Log($"PrintResult: {status} | Document: {docName} | Message: {message}");
+                Log($"PrintStatusUpdated: {status} | Document: {docName} | Message: {message}");
             });
 
             try
@@ -159,7 +162,7 @@ namespace PrintAgentWinForms
                 
                 // As a client, we don't need to register as an agent to print, 
                 // but we might want to request agents immediately.
-                await _connection.InvokeAsync("RequestActiveAgents");
+                await _connection.InvokeAsync("RegisterUiClient");
             }
             catch (Exception ex)
             {
@@ -172,7 +175,7 @@ namespace PrintAgentWinForms
             if (_connection?.State == HubConnectionState.Connected)
             {
                 Log("Requesting active agents...");
-                await _connection.InvokeAsync("RequestActiveAgents");
+                await _connection.InvokeAsync("RegisterUiClient");
             }
         }
 
@@ -182,7 +185,7 @@ namespace PrintAgentWinForms
             {
                 string agent = cmbAgents.SelectedItem.ToString();
                 Log($"Requesting printers for agent {agent}...");
-                await _connection.InvokeAsync("RequestPrinters", agent, _correlationId);
+                await _connection.InvokeAsync("RequestPrinters", agent);
             }
             else
             {
@@ -234,7 +237,7 @@ namespace PrintAgentWinForms
                 string documentName = Path.GetFileName(filePath);
 
                 Log($"Sending print command to {agent} (Printer: {printer})...");
-                await _connection.InvokeAsync("SendPrintCommand", agent, printer, base64Data, documentName);
+                await _connection.InvokeAsync("SendPrintJob", agent, printer, base64Data, documentName);
             }
             catch (Exception ex)
             {

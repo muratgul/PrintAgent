@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/Examples/">
+    <Project Path="../ExamplePrintHub/ExamplePrintHub.csproj" />
+    <Project Path="../ExampleWinFormsClient/PrintAgentWinForms.csproj" />
+  </Folder>
+  <Project Path="PrintAgent.csproj" />
+</Solution>
