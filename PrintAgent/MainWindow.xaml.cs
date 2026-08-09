@@ -9,6 +9,25 @@ using System.Diagnostics;
 
 namespace PrintAgent
 {
+    public class PrinterModel : System.ComponentModel.INotifyPropertyChanged
+    {
+        public string Name { get; set; }
+        private bool _isAllowed;
+        public bool IsAllowed
+        {
+            get => _isAllowed;
+            set
+            {
+                if (_isAllowed != value)
+                {
+                    _isAllowed = value;
+                    PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(IsAllowed)));
+                }
+            }
+        }
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+    }
+
     public partial class MainWindow : Window
     {
         private System.Windows.Forms.NotifyIcon _notifyIcon;
@@ -19,6 +38,7 @@ namespace PrintAgent
         private bool _showNotifications = true;
         private bool _autoStart = true;
         private string _appSettingsPath = "appsettings.json";
+        private System.Collections.ObjectModel.ObservableCollection<PrinterModel> _printers = new();
 
         public MainWindow()
         {
@@ -112,6 +132,9 @@ namespace PrintAgent
 
         private void LoadSettings()
         {
+            var allowedPrinters = new System.Collections.Generic.List<string>();
+            bool allowAll = true;
+
             try
             {
                 if (File.Exists(_appSettingsPath))
@@ -119,15 +142,36 @@ namespace PrintAgent
                     var json = File.ReadAllText(_appSettingsPath);
                     var node = JsonNode.Parse(json);
                     var settings = node?["AgentSettings"];
+
                     if (settings != null)
                     {
                         if (settings["MinimizeToTray"] != null) _minimizeToTray = settings["MinimizeToTray"].GetValue<bool>();
                         if (settings["ShowNotifications"] != null) _showNotifications = settings["ShowNotifications"].GetValue<bool>();
                         if (settings["AutoStart"] != null) _autoStart = settings["AutoStart"].GetValue<bool>();
+                        
+                        if (settings["AllowedPrinters"] is JsonArray allowedArr)
+                        {
+                            foreach (var item in allowedArr)
+                            {
+                                if (item != null) allowedPrinters.Add(item.ToString());
+                            }
+                            allowAll = allowedPrinters.Count == 0 && settings["AllowedPrinters"] == null;
+                        }
                     }
                 }
             }
             catch { }
+
+            _printers.Clear();
+            foreach (string printer in System.Drawing.Printing.PrinterSettings.InstalledPrinters)
+            {
+                _printers.Add(new PrinterModel 
+                { 
+                    Name = printer, 
+                    IsAllowed = allowAll || allowedPrinters.Contains(printer) 
+                });
+            }
+            PrintersListBox.ItemsSource = _printers;
 
             ChkMinimizeToTray.IsChecked = _minimizeToTray;
             ChkAutoStart.IsChecked = _autoStart;
@@ -168,6 +212,55 @@ namespace PrintAgent
             catch (Exception ex) 
             {
                 System.Windows.MessageBox.Show("Ayarlar kaydedilirken hata oluştu: " + ex.Message);
+            }
+        }
+
+        private void PrinterSetting_Changed(object sender, RoutedEventArgs e)
+        {
+            if (!this.IsLoaded) return;
+            SavePrintersToSettings();
+        }
+
+        private void SavePrintersToSettings()
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                try
+                {
+                    if (File.Exists(_appSettingsPath))
+                    {
+                        var json = File.ReadAllText(_appSettingsPath);
+                        var node = JsonNode.Parse(json, null, new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip });
+                        var settings = node?["AgentSettings"];
+                        if (settings != null)
+                        {
+                            var allowedArray = new JsonArray();
+                            foreach (var p in _printers)
+                            {
+                                if (p.IsAllowed) allowedArray.Add(p.Name);
+                            }
+                            settings["AllowedPrinters"] = allowedArray;
+                            File.WriteAllText(_appSettingsPath, node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+                        }
+                    }
+                    break;
+                }
+                catch (IOException)
+                {
+                    if (i == 2)
+                    {
+                        System.Windows.MessageBox.Show("Yazıcı ayarları kaydedilirken dosya erişim hatası oluştu. Lütfen tekrar deneyin.");
+                    }
+                    else
+                    {
+                        System.Threading.Thread.Sleep(100);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show("Yazıcı ayarları kaydedilirken hata oluştu: " + ex.Message);
+                    break;
+                }
             }
         }
 

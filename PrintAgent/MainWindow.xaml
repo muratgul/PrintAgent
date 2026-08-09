@@ -1,7 +1,7 @@
 <Window x:Class="PrintAgent.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="PrintAgent" Height="400" Width="600"
+        Title="PrintAgent" Height="503" Width="1000"
         Icon="favicon.ico"
         WindowStartupLocation="CenterScreen"
         StateChanged="Window_StateChanged"
@@ -12,18 +12,37 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        
+
         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
             <Ellipse x:Name="StatusIndicator" Width="16" Height="16" Fill="Red" Margin="0,0,10,0"/>
             <TextBlock x:Name="StatusText" Text="Bağlantı Yok" VerticalAlignment="Center" FontWeight="Bold"/>
         </StackPanel>
-        
+
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
             <CheckBox x:Name="ChkMinimizeToTray" Content="Tepsiye Küçült" VerticalAlignment="Center" Margin="0,0,15,0" Checked="Setting_Changed" Unchecked="Setting_Changed"/>
             <CheckBox x:Name="ChkAutoStart" Content="Otomatik Başlat" VerticalAlignment="Center" Margin="0,0,15,0" Checked="Setting_Changed" Unchecked="Setting_Changed"/>
             <CheckBox x:Name="ChkShowNotifications" Content="Bildirimleri Göster" VerticalAlignment="Center" Margin="0,0,15,0" Checked="Setting_Changed" Unchecked="Setting_Changed"/>
         </StackPanel>
 
-        <ListBox x:Name="LogListBox" Grid.Row="2" />
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="350"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <GroupBox Header="İzin Verilen Yazıcılar" Margin="0,0,10,0">
+                <ListBox x:Name="PrintersListBox" BorderThickness="0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsAllowed}" Click="PrinterSetting_Changed" Margin="0,2"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </GroupBox>
+
+            <GroupBox Grid.Column="1" Header="Olay Günlüğü">
+                <ListBox x:Name="LogListBox" BorderThickness="0" />
+            </GroupBox>
+        </Grid>
     </Grid>
 </Window>

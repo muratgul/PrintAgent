@@ -19,6 +19,34 @@ public class Worker : BackgroundService
         _configuration = configuration;
     }
 
+    private (bool AllowAll, List<string> AllowedPrinters) GetPrinterSettings()
+    {
+        var allowedPrinters = new List<string>();
+        bool allowAll = true;
+        try
+        {
+            if (File.Exists("appsettings.json"))
+            {
+                var json = File.ReadAllText("appsettings.json");
+                var node = System.Text.Json.Nodes.JsonNode.Parse(json, null, new System.Text.Json.JsonDocumentOptions { CommentHandling = System.Text.Json.JsonCommentHandling.Skip });
+                var settings = node?["AgentSettings"];
+                if (settings != null && settings["AllowedPrinters"] != null)
+                {
+                    allowAll = false;
+                    if (settings["AllowedPrinters"] is System.Text.Json.Nodes.JsonArray arr)
+                    {
+                        foreach (var item in arr)
+                        {
+                            if (item != null) allowedPrinters.Add(item.ToString());
+                        }
+                    }
+                }
+            }
+        }
+        catch { }
+        return (allowAll, allowedPrinters);
+    }
+
     protected async override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         // Merkezi Sunucunun (GenelIslemlerApi01) SignalR Hub adresi
@@ -70,9 +98,14 @@ public class Worker : BackgroundService
             _logger.LogInformation("Yazıcı listesi istendi. İstek ID: {CorrelationId}", correlationId);
             
             var printers = new List<string>();
+            var (allowAll, allowedPrinters) = GetPrinterSettings();
+
             foreach (string printer in PrinterSettings.InstalledPrinters)
             {
-                printers.Add(printer);
+                if (allowAll || allowedPrinters.Contains(printer))
+                {
+                    printers.Add(printer);
+                }
             }
 
             // Listeyi merkeze geri yolla
@@ -87,6 +120,18 @@ public class Worker : BackgroundService
         {
             EventBus.NotifyActivity("Yazdırma İsteği", $"Belge: {documentName}\nYazıcı: {printerName}");
             _logger.LogInformation("Yazdırma komutu alındı. Hedef Yazıcı: {PrinterName}, Belge: {DocumentName}", printerName, documentName);
+            
+            var (allowAll, allowedPrinters) = GetPrinterSettings();
+
+            if (!allowAll && !allowedPrinters.Contains(printerName))
+            {
+                _logger.LogWarning("İzin verilmeyen bir yazıcıya yazdırma isteği reddedildi: {PrinterName}", printerName);
+                if (_hubConnection.State == HubConnectionState.Connected)
+                {
+                    await _hubConnection.SendAsync("ReportPrintStatus", logId, callerId, false, "Bu yazıcıya yazdırma izni verilmemiş.", documentName, stoppingToken);
+                }
+                return;
+            }
             
             try
             {
