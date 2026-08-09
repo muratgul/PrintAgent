@@ -148,6 +148,7 @@ namespace PrintAgent
                         if (settings["MinimizeToTray"] != null) _minimizeToTray = settings["MinimizeToTray"].GetValue<bool>();
                         if (settings["ShowNotifications"] != null) _showNotifications = settings["ShowNotifications"].GetValue<bool>();
                         if (settings["AutoStart"] != null) _autoStart = settings["AutoStart"].GetValue<bool>();
+                        if (settings["HubUrl"] != null) TxtHubUrl.Text = settings["HubUrl"].GetValue<string>();
                         
                         if (settings["AllowedPrinters"] is JsonArray allowedArr)
                         {
@@ -212,6 +213,31 @@ namespace PrintAgent
             catch (Exception ex) 
             {
                 System.Windows.MessageBox.Show("Ayarlar kaydedilirken hata oluştu: " + ex.Message);
+            }
+        }
+
+        private void BtnSaveHubUrl_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(TxtHubUrl.Text)) return;
+            
+            try
+            {
+                if (File.Exists(_appSettingsPath))
+                {
+                    var json = File.ReadAllText(_appSettingsPath);
+                    var node = JsonNode.Parse(json, null, new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip });
+                    var settings = node?["AgentSettings"];
+                    if (settings != null)
+                    {
+                        settings["HubUrl"] = TxtHubUrl.Text.Trim();
+                        File.WriteAllText(_appSettingsPath, node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+                        System.Windows.MessageBox.Show("Hub URL güncellendi.\nDeğişikliklerin etkili olması için uygulamayı yeniden başlatmanız gerekmektedir.", "Bilgi");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show("Hub URL güncellenirken hata oluştu: " + ex.Message, "Hata");
             }
         }
 

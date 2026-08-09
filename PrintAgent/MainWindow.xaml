@@ -10,6 +10,8 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -24,7 +26,14 @@
             <CheckBox x:Name="ChkShowNotifications" Content="Bildirimleri Göster" VerticalAlignment="Center" Margin="0,0,15,0" Checked="Setting_Changed" Unchecked="Setting_Changed"/>
         </StackPanel>
 
-        <Grid Grid.Row="2">
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,10">
+            <TextBlock Text="Hub URL:" VerticalAlignment="Center" Margin="0,0,5,0" FontWeight="SemiBold"/>
+            <TextBox x:Name="TxtHubUrl" Width="300" VerticalAlignment="Center" Margin="0,0,10,0" Padding="2"/>
+            <Button x:Name="BtnSaveHubUrl" Content="Güncelle" Padding="10,2" Click="BtnSaveHubUrl_Click"/>
+            <TextBlock x:Name="TxtHubUrlStatus" Text="(Değişikliğin etkili olması için uygulamayı yeniden başlatın)" Foreground="Gray" VerticalAlignment="Center" Margin="10,0,0,0" FontStyle="Italic"/>
+        </StackPanel>
+
+        <Grid Grid.Row="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="350"/>
                 <ColumnDefinition Width="*"/>
