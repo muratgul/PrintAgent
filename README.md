@@ -27,6 +27,7 @@ Sistem 3 ana bileşenden oluşur:
   - **Bildirimleri Göster (Show Notifications):** Bağlantı kopmaları ve yeniden bağlanma gibi durumları sağ alt köşede Windows bildirim balonu olarak gösterir.
 - **Büyük Boyutlu Dosya Aktarımı Desteği:** Hub Server (`ExamplePrintHub`) üzerinde yer alan `MaxRequestBodySize` ve SignalR `MaximumReceiveMessageSize` limitleri **500 MB**'a çıkartıldı.
 - **Timeout (Zaman Aşımı) ve Yarış Durumu (Race Condition) İyileştirmeleri:** Client bağlantılarında 5 dakikalık tolerans (ServerTimeout) eklendi. Ayrıca uygulamanın açılışı esnasında hızlıca sunucuya bağlandığında arayüz ikonunun kırmızı (bağlı değil) kalmasına neden olan yarış durumu (Race Condition) giderildi.
+- **WPF UI Kilitlenme (Deadlock) ve Kaynak Sızıntısı (Memory Leak) Düzeltmesi:** Arka planda SignalR üzerinden bağlantı durumu değiştiğinde WPF arayüzünün güncellenememesi ve kilitlenmesi (Dispatcher.Invoke) sorunu `BeginInvoke` kullanılarak çözüldü. Ayrıca GDI kaynaklarını (Handle) tüketen ikon oluşturma mantığı cache (önbellek) yapısına geçirilerek performans/bellek sızıntısı iyileştirildi.
 
 ---
 
@@ -51,6 +52,7 @@ The system consists of 3 main components:
   - **Show Notifications:** Displays Windows balloon notifications in the system tray for events like disconnections and reconnections.
 - **Large File Transfer Support:** The `MaxRequestBodySize` and SignalR `MaximumReceiveMessageSize` limits on the Hub Server (`ExamplePrintHub`) have been increased to **500 MB** to allow printing of very large files.
 - **Timeout and Race Condition Improvements:** A 5-minute tolerance (`ServerTimeout`) was added to client connections to prevent timeout issues when transferring large files. Additionally, a race condition bug where the UI icon would remain red (disconnected) during an extremely fast connection on startup has been fixed.
+- **WPF UI Deadlock and Memory Leak Fix:** Resolved an issue where the WPF interface would fail to update or lock up (due to Dispatcher.Invoke) when the background SignalR connection state changed, by switching to `BeginInvoke`. Additionally, improved performance and prevented memory/handle leaks by caching the unmanaged GDI icons instead of recreating them on every state change.
 
 ---
 

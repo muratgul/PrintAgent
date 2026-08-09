@@ -12,6 +12,8 @@ namespace PrintAgent
     public partial class MainWindow : Window
     {
         private System.Windows.Forms.NotifyIcon _notifyIcon;
+        private System.Drawing.Icon _iconConnected;
+        private System.Drawing.Icon _iconDisconnected;
         private bool _isClosing = false;
         private bool _minimizeToTray = true;
         private bool _showNotifications = true;
@@ -21,6 +23,10 @@ namespace PrintAgent
         public MainWindow()
         {
             InitializeComponent();
+            
+            _iconConnected = CreateStatusIcon(System.Drawing.Color.LimeGreen);
+            _iconDisconnected = CreateStatusIcon(System.Drawing.Color.Red);
+
             
             LoadSettings();
 
@@ -32,21 +38,21 @@ namespace PrintAgent
             
             EventBus.ConnectionStateChanged += (isConnected) =>
             {
-                Dispatcher.Invoke(() =>
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                 {
                     StatusIndicator.Fill = isConnected ? System.Windows.Media.Brushes.LimeGreen : System.Windows.Media.Brushes.Red;
                     StatusText.Text = isConnected ? "Bağlı" : "Bağlantı Yok";
                     if (_notifyIcon != null)
                     {
-                        _notifyIcon.Icon = isConnected ? CreateStatusIcon(System.Drawing.Color.LimeGreen) : CreateStatusIcon(System.Drawing.Color.Red);
+                        _notifyIcon.Icon = isConnected ? _iconConnected : _iconDisconnected;
                         _notifyIcon.Text = isConnected ? "PrintAgent - Bağlı" : "PrintAgent - Bağlantı Yok";
                     }
-                });
+                }));
             };
 
             EventBus.ActivityLogged += (title, message) =>
             {
-                Dispatcher.Invoke(() =>
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                 {
                     LogListBox.Items.Insert(0, $"[{DateTime.Now:HH:mm:ss}] {title}: {message}");
                     if (LogListBox.Items.Count > 100)
@@ -58,14 +64,14 @@ namespace PrintAgent
                     {
                         _notifyIcon.ShowBalloonTip(3000, title, message, System.Windows.Forms.ToolTipIcon.Info);
                     }
-                });
+                }));
             };
         }
 
         private void SetupNotifyIcon()
         {
             _notifyIcon = new System.Windows.Forms.NotifyIcon();
-            _notifyIcon.Icon = EventBus.IsConnected ? CreateStatusIcon(System.Drawing.Color.LimeGreen) : CreateStatusIcon(System.Drawing.Color.Red);
+            _notifyIcon.Icon = EventBus.IsConnected ? _iconConnected : _iconDisconnected;
             _notifyIcon.Text = EventBus.IsConnected ? "PrintAgent - Bağlı" : "PrintAgent - Bağlantı Yok";
             _notifyIcon.Visible = true;
             _notifyIcon.DoubleClick += (s, e) => ShowWindow();
