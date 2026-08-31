@@ -278,7 +278,10 @@ namespace PrintAgent
 
         private void BtnTestPrint_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is string printerName)
+            var btn = sender as Button;
+            var printerName = btn?.Tag?.ToString();
+            
+            if (!string.IsNullOrEmpty(printerName))
             {
                 try
                 {
@@ -295,6 +298,7 @@ namespace PrintAgent
                     {
                         var font = new System.Drawing.Font("Arial", 14, System.Drawing.FontStyle.Bold);
                         ev.Graphics?.DrawString("PrintAgent Sınama Sayfası\n\nBaşarıyla yazdırıldı!", font, System.Drawing.Brushes.Black, new System.Drawing.PointF(100, 100));
+                        ev.HasMorePages = false;
                     };
 
                     printDoc.Print();
@@ -304,6 +308,10 @@ namespace PrintAgent
                 {
                     System.Windows.MessageBox.Show("Sınama sayfası yazdırılamadı: " + ex.Message, "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
+            }
+            else
+            {
+                System.Windows.MessageBox.Show("Yazıcı adı alınamadı.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
