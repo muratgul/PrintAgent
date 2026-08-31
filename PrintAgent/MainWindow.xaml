@@ -24,6 +24,7 @@
             <CheckBox x:Name="ChkMinimizeToTray" Content="Tepsiye Küçült" VerticalAlignment="Center" Margin="0,0,15,0" Checked="Setting_Changed" Unchecked="Setting_Changed"/>
             <CheckBox x:Name="ChkAutoStart" Content="Otomatik Başlat" VerticalAlignment="Center" Margin="0,0,15,0" Checked="Setting_Changed" Unchecked="Setting_Changed"/>
             <CheckBox x:Name="ChkShowNotifications" Content="Bildirimleri Göster" VerticalAlignment="Center" Margin="0,0,15,0" Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+            <CheckBox x:Name="ChkPausePrinting" Content="Yazdırmayı Duraklat" VerticalAlignment="Center" Margin="0,0,15,0" Checked="PauseSetting_Changed" Unchecked="PauseSetting_Changed" Foreground="DarkRed" FontWeight="Bold"/>
         </StackPanel>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,10">
@@ -35,13 +36,13 @@
 
         <Grid Grid.Row="3">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="350"/>
+                <ColumnDefinition Width="420"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <GroupBox Margin="0,0,10,0">
                 <GroupBox.Header>
-                    <Grid Width="330">
+                    <Grid Width="400">
                         <TextBlock Text="İzin Verilen Yazıcılar" VerticalAlignment="Center"/>
                         <Button x:Name="BtnRefreshPrinters" Content="Yenile" HorizontalAlignment="Right" Padding="10,0" Click="BtnRefreshPrinters_Click"/>
                     </Grid>
@@ -49,7 +50,18 @@
                 <ListBox x:Name="PrintersListBox" BorderThickness="0">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsAllowed}" Click="PrinterSetting_Changed" Margin="0,2"/>
+                            <Grid Margin="0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="220"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <CheckBox Content="{Binding Name}" IsChecked="{Binding IsAllowed}" Click="PrinterSetting_Changed" VerticalAlignment="Center" ToolTip="{Binding Name}"/>
+                                <TextBlock Grid.Column="1" Text="Kopya:" VerticalAlignment="Center" Margin="10,0,5,0" />
+                                <TextBox Grid.Column="2" Text="{Binding Copies, UpdateSourceTrigger=PropertyChanged}" Width="30" VerticalAlignment="Center" TextChanged="PrinterSetting_Changed_Text" />
+                                <Button Grid.Column="3" Content="Test" Tag="{Binding Name}" Margin="10,0,0,0" Padding="5,0" Click="BtnTestPrint_Click" />
+                            </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>

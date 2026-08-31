@@ -11,7 +11,7 @@ namespace PrintAgent
 {
     public class PrinterModel : System.ComponentModel.INotifyPropertyChanged
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = "";
         private bool _isAllowed;
         public bool IsAllowed
         {
@@ -25,7 +25,22 @@ namespace PrintAgent
                 }
             }
         }
-        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        
+        private int _copies = 1;
+        public int Copies
+        {
+            get => _copies;
+            set
+            {
+                if (_copies != value)
+                {
+                    _copies = value;
+                    PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(Copies)));
+                }
+            }
+        }
+        
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
     }
 
     public partial class MainWindow : Window
@@ -102,6 +117,30 @@ namespace PrintAgent
             var openItem = new System.Windows.Forms.ToolStripMenuItem("Göster");
             openItem.Click += (s, e) => ShowWindow();
             
+            var refreshItem = new System.Windows.Forms.ToolStripMenuItem("Yazıcıları Yenile");
+            refreshItem.Click += (s, e) => LoadPrinters();
+
+            var pauseItem = new System.Windows.Forms.ToolStripMenuItem("Yazdırmayı Duraklat");
+            pauseItem.Click += (s, e) => 
+            {
+                bool newState = !EventBus.IsPaused;
+                EventBus.SetPauseState(newState);
+                pauseItem.Checked = newState;
+                ChkPausePrinting.IsChecked = newState;
+            };
+
+            EventBus.PauseStateChanged += (isPaused) => 
+            {
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    pauseItem.Checked = isPaused;
+                    ChkPausePrinting.IsChecked = isPaused;
+                }));
+            };
+            
+            var reconnectItem = new System.Windows.Forms.ToolStripMenuItem("Tekrar Bağlan");
+            reconnectItem.Click += (s, e) => EventBus.RequestForceReconnect();
+            
             var exitItem = new System.Windows.Forms.ToolStripMenuItem("Kapat (Çıkış)");
             exitItem.Click += (s, e) => 
             {
@@ -110,6 +149,11 @@ namespace PrintAgent
             };
 
             contextMenu.Items.Add(openItem);
+            contextMenu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
+            contextMenu.Items.Add(pauseItem);
+            contextMenu.Items.Add(refreshItem);
+            contextMenu.Items.Add(reconnectItem);
+            contextMenu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
             contextMenu.Items.Add(exitItem);
             _notifyIcon.ContextMenuStrip = contextMenu;
         }
@@ -218,6 +262,49 @@ namespace PrintAgent
                     BtnForceReconnect.IsEnabled = true;
                 }));
             });
+        }
+
+        private void PauseSetting_Changed(object sender, RoutedEventArgs e)
+        {
+            if (!this.IsLoaded) return;
+            EventBus.SetPauseState(ChkPausePrinting.IsChecked == true);
+        }
+
+        private void PrinterSetting_Changed_Text(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            if (!this.IsLoaded) return;
+            SavePrintersToSettings();
+        }
+
+        private void BtnTestPrint_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string printerName)
+            {
+                try
+                {
+                    var printDoc = new System.Drawing.Printing.PrintDocument();
+                    printDoc.PrinterSettings.PrinterName = printerName;
+                    
+                    if (!printDoc.PrinterSettings.IsValid)
+                    {
+                        System.Windows.MessageBox.Show("Yazıcıya ulaşılamıyor: " + printerName, "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+
+                    printDoc.PrintPage += (s, ev) =>
+                    {
+                        var font = new System.Drawing.Font("Arial", 14, System.Drawing.FontStyle.Bold);
+                        ev.Graphics?.DrawString("PrintAgent Sınama Sayfası\n\nBaşarıyla yazdırıldı!", font, System.Drawing.Brushes.Black, new System.Drawing.PointF(100, 100));
+                    };
+
+                    printDoc.Print();
+                    EventBus.NotifyActivity("Test", $"{printerName} için sınama sayfası yazdırıldı.");
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show("Sınama sayfası yazdırılamadı: " + ex.Message, "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
         }
 
         private void Setting_Changed(object sender, RoutedEventArgs e)

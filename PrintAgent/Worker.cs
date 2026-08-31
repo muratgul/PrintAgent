@@ -20,9 +20,9 @@ public class Worker : BackgroundService
         _configuration = configuration;
     }
 
-    private (bool AllowAll, List<string> AllowedPrinters) GetPrinterSettings()
+    private (bool AllowAll, Dictionary<string, int> AllowedPrinters) GetPrinterSettings()
     {
-        var allowedPrinters = new List<string>();
+        var allowedPrinters = new Dictionary<string, int>();
         bool allowAll = true;
         try
         {
@@ -31,14 +31,27 @@ public class Worker : BackgroundService
                 var json = File.ReadAllText("appsettings.json");
                 var node = System.Text.Json.Nodes.JsonNode.Parse(json, null, new System.Text.Json.JsonDocumentOptions { CommentHandling = System.Text.Json.JsonCommentHandling.Skip });
                 var settings = node?["AgentSettings"];
-                if (settings != null && settings["AllowedPrinters"] != null)
+                if (settings != null)
                 {
-                    allowAll = false;
-                    if (settings["AllowedPrinters"] is System.Text.Json.Nodes.JsonArray arr)
+                    if (settings["PrinterConfigs"] is System.Text.Json.Nodes.JsonArray configArr)
                     {
+                        allowAll = false;
+                        foreach (var item in configArr)
+                        {
+                            if (item != null)
+                            {
+                                string name = item["Name"]?.ToString() ?? "";
+                                int copies = item["Copies"]?.GetValue<int>() ?? 1;
+                                if (!string.IsNullOrEmpty(name)) allowedPrinters[name] = copies;
+                            }
+                        }
+                    }
+                    else if (settings["AllowedPrinters"] is System.Text.Json.Nodes.JsonArray arr)
+                    {
+                        allowAll = false;
                         foreach (var item in arr)
                         {
-                            if (item != null) allowedPrinters.Add(item.ToString());
+                            if (item != null) allowedPrinters[item.ToString()] = 1;
                         }
                     }
                 }
@@ -46,6 +59,16 @@ public class Worker : BackgroundService
         }
         catch { }
         return (allowAll, allowedPrinters);
+    }
+
+    private void LogPrintHistory(string documentName, string printerName, bool success, string errorMessage)
+    {
+        try
+        {
+            var logLine = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Belge: {documentName} | Yazıcı: {printerName} | Durum: {(success ? "Başarılı" : "Hata")} | Not: {errorMessage}\n";
+            File.AppendAllText("print_history.txt", logLine);
+        }
+        catch { }
     }
 
     protected async override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -103,7 +126,7 @@ public class Worker : BackgroundService
 
             foreach (string printer in PrinterSettings.InstalledPrinters)
             {
-                if (allowAll || allowedPrinters.Contains(printer))
+                if (allowAll || allowedPrinters.ContainsKey(printer))
                 {
                     printers.Add(printer);
                 }
@@ -122,11 +145,23 @@ public class Worker : BackgroundService
             EventBus.NotifyActivity("Yazdırma İsteği", $"Belge: {documentName}\nYazıcı: {printerName}");
             _logger.LogInformation("Yazdırma komutu alındı. Hedef Yazıcı: {PrinterName}, Belge: {DocumentName}", printerName, documentName);
             
+            if (EventBus.IsPaused)
+            {
+                _logger.LogWarning("Yazdırma isteği reddedildi, ajan duraklatılmış durumda.");
+                LogPrintHistory(documentName, printerName, false, "Duraklatıldı (Rahatsız Etmeyin)");
+                if (_hubConnection.State == HubConnectionState.Connected)
+                {
+                    await _hubConnection.SendAsync("ReportPrintStatus", logId, callerId, false, "Ajan şu anda duraklatılmış (Rahatsız Etmeyin) modunda.", documentName, stoppingToken);
+                }
+                return;
+            }
+
             var (allowAll, allowedPrinters) = GetPrinterSettings();
 
-            if (!allowAll && !allowedPrinters.Contains(printerName))
+            if (!allowAll && !allowedPrinters.ContainsKey(printerName))
             {
                 _logger.LogWarning("İzin verilmeyen bir yazıcıya yazdırma isteği reddedildi: {PrinterName}", printerName);
+                LogPrintHistory(documentName, printerName, false, "Yazıcı izni yok.");
                 if (_hubConnection.State == HubConnectionState.Connected)
                 {
                     await _hubConnection.SendAsync("ReportPrintStatus", logId, callerId, false, "Bu yazıcıya yazdırma izni verilmemiş.", documentName, stoppingToken);
@@ -134,9 +169,13 @@ public class Worker : BackgroundService
                 return;
             }
             
+            int copies = 1;
+            if (allowedPrinters.TryGetValue(printerName, out int cfgCopies)) copies = cfgCopies;
+
             try
             {
-                await PrintData(printerName, data, documentName);
+                await PrintData(printerName, data, documentName, copies);
+                LogPrintHistory(documentName, printerName, true, "");
                 if (_hubConnection.State == HubConnectionState.Connected)
                 {
                     await _hubConnection.SendAsync("ReportPrintStatus", logId, callerId, true, "Yazdırma işlemi başarılı.", documentName, stoppingToken);
@@ -145,6 +184,7 @@ public class Worker : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Yazdırma sırasında hata oluştu!");
+                LogPrintHistory(documentName, printerName, false, ex.Message);
                 if (_hubConnection.State == HubConnectionState.Connected)
                 {
                     await _hubConnection.SendAsync("ReportPrintStatus", logId, callerId, false, ex.Message, documentName, stoppingToken);
@@ -206,7 +246,7 @@ public class Worker : BackgroundService
         }
     }
 
-    private async Task PrintData(string printerName, string data, string documentName)
+    private async Task PrintData(string printerName, string data, string documentName, int copies)
     {
         // 1. Gelen data bir URL mi?
         if (data.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || data.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
@@ -214,7 +254,7 @@ public class Worker : BackgroundService
             _logger.LogInformation("URL algılandı, dosya indiriliyor: {Url}", data);
             using var httpClient = new HttpClient();
             var fileBytes = await httpClient.GetByteArrayAsync(data);
-            await ProcessAndPrintBytesAsync(printerName, fileBytes, documentName);
+            await ProcessAndPrintBytesAsync(printerName, fileBytes, documentName, copies);
             return;
         }
 
@@ -224,7 +264,7 @@ public class Worker : BackgroundService
             _logger.LogInformation("Data URI algılandı, işleniyor...");
             var base64Data = data.Substring(data.IndexOf(";base64,") + 8);
             var fileBytes = Convert.FromBase64String(base64Data);
-            await ProcessAndPrintBytesAsync(printerName, fileBytes, documentName);
+            await ProcessAndPrintBytesAsync(printerName, fileBytes, documentName, copies);
             return;
         }
 
@@ -240,7 +280,7 @@ public class Worker : BackgroundService
                 if (!string.IsNullOrEmpty(ext) || !string.IsNullOrEmpty(magicExt) || fileBytes.Length > 256)
                 {
                     _logger.LogInformation("Raw Base64 dosya algılandı, işleniyor...");
-                    await ProcessAndPrintBytesAsync(printerName, fileBytes, documentName);
+                    await ProcessAndPrintBytesAsync(printerName, fileBytes, documentName, copies);
                     return;
                 }
             }
@@ -252,10 +292,10 @@ public class Worker : BackgroundService
 
         // 4. Yukarıdakilere uymuyorsa Normal Metin (Standart Yazdırma)
         _logger.LogInformation("Metin verisi algılandı, standart yöntemle yazdırılıyor...");
-        PrintPlainText(printerName, data, documentName);
+        PrintPlainText(printerName, data, documentName, copies);
     }
 
-    private async Task ProcessAndPrintBytesAsync(string printerName, byte[] fileBytes, string documentName)
+    private async Task ProcessAndPrintBytesAsync(string printerName, byte[] fileBytes, string documentName, int copies)
     {
         string extension = Path.GetExtension(documentName)?.ToLowerInvariant() ?? "";
 
@@ -272,13 +312,13 @@ public class Worker : BackgroundService
 
         if (extension == ".pdf")
         {
-            PrintPdfBytes(printerName, fileBytes, documentName);
+            PrintPdfBytes(printerName, fileBytes, documentName, copies);
             return;
         }
 
         if (extension == ".png" || extension == ".jpg" || extension == ".jpeg" || extension == ".bmp" || extension == ".gif")
         {
-            PrintImageBytes(printerName, fileBytes, documentName);
+            PrintImageBytes(printerName, fileBytes, documentName, copies);
             return;
         }
 
@@ -372,11 +412,12 @@ public class Worker : BackgroundService
         }
     }
 
-    private void PrintPlainText(string printerName, string data, string documentName)
+    private void PrintPlainText(string printerName, string data, string documentName, int copies)
     {
         var printDocument = new PrintDocument();
         printDocument.PrinterSettings.PrinterName = printerName;
         printDocument.DocumentName = documentName;
+        printDocument.PrinterSettings.Copies = (short)copies;
 
         if (!printDocument.PrinterSettings.IsValid)
         {
@@ -395,7 +436,7 @@ public class Worker : BackgroundService
         _logger.LogInformation("Metin belgesi yazdırıldı: {DocumentName}", documentName);
     }
 
-    private void PrintPdfBytes(string printerName, byte[] pdfBytes, string documentName)
+    private void PrintPdfBytes(string printerName, byte[] pdfBytes, string documentName, int copies)
     {
         using var memoryStream = new MemoryStream(pdfBytes);
         using var pdfDocument = PdfiumViewer.PdfDocument.Load(memoryStream);
@@ -404,6 +445,7 @@ public class Worker : BackgroundService
         using var printDocument = pdfDocument.CreatePrintDocument(PdfiumViewer.PdfPrintMode.ShrinkToMargin);
         printDocument.PrinterSettings.PrinterName = printerName;
         printDocument.DocumentName = documentName;
+        printDocument.PrinterSettings.Copies = (short)copies;
 
         if (!printDocument.PrinterSettings.IsValid)
         {
@@ -415,7 +457,7 @@ public class Worker : BackgroundService
         _logger.LogInformation("PDF Belgesi başarıyla yazdırıldı: {DocumentName}", documentName);
     }
 
-    private void PrintImageBytes(string printerName, byte[] imageBytes, string documentName)
+    private void PrintImageBytes(string printerName, byte[] imageBytes, string documentName, int copies)
     {
         using var memoryStream = new MemoryStream(imageBytes);
         using var image = Image.FromStream(memoryStream);
@@ -423,6 +465,7 @@ public class Worker : BackgroundService
         var printDocument = new PrintDocument();
         printDocument.PrinterSettings.PrinterName = printerName;
         printDocument.DocumentName = documentName;
+        printDocument.PrinterSettings.Copies = (short)copies;
 
         if (!printDocument.PrinterSettings.IsValid)
         {

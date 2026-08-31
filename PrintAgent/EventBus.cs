@@ -27,5 +27,14 @@ namespace PrintAgent
         {
             ForceReconnectRequested?.Invoke();
         }
+
+        public static bool IsPaused { get; private set; }
+        public static event Action<bool>? PauseStateChanged;
+
+        public static void SetPauseState(bool isPaused)
+        {
+            IsPaused = isPaused;
+            PauseStateChanged?.Invoke(isPaused);
+        }
     }
 }
