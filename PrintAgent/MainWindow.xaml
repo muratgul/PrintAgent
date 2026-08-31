@@ -38,7 +38,13 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <GroupBox Header="İzin Verilen Yazıcılar" Margin="0,0,10,0">
+            <GroupBox Margin="0,0,10,0">
+                <GroupBox.Header>
+                    <Grid Width="330">
+                        <TextBlock Text="İzin Verilen Yazıcılar" VerticalAlignment="Center"/>
+                        <Button x:Name="BtnRefreshPrinters" Content="Yenile" HorizontalAlignment="Right" Padding="10,0" Click="BtnRefreshPrinters_Click"/>
+                    </Grid>
+                </GroupBox.Header>
                 <ListBox x:Name="PrintersListBox" BorderThickness="0">
                     <ListBox.ItemTemplate>
                         <DataTemplate>

@@ -132,9 +132,6 @@ namespace PrintAgent
 
         private void LoadSettings()
         {
-            var allowedPrinters = new System.Collections.Generic.List<string>();
-            bool allowAll = true;
-
             try
             {
                 if (File.Exists(_appSettingsPath))
@@ -149,7 +146,33 @@ namespace PrintAgent
                         if (settings["ShowNotifications"] != null) _showNotifications = settings["ShowNotifications"].GetValue<bool>();
                         if (settings["AutoStart"] != null) _autoStart = settings["AutoStart"].GetValue<bool>();
                         if (settings["HubUrl"] != null) TxtHubUrl.Text = settings["HubUrl"].GetValue<string>();
-                        
+                    }
+                }
+            }
+            catch { }
+
+            LoadPrinters();
+
+            ChkMinimizeToTray.IsChecked = _minimizeToTray;
+            ChkAutoStart.IsChecked = _autoStart;
+            ChkShowNotifications.IsChecked = _showNotifications;
+        }
+
+        private void LoadPrinters()
+        {
+            var allowedPrinters = new System.Collections.Generic.List<string>();
+            bool allowAll = true;
+
+            try
+            {
+                if (File.Exists(_appSettingsPath))
+                {
+                    var json = File.ReadAllText(_appSettingsPath);
+                    var node = JsonNode.Parse(json);
+                    var settings = node?["AgentSettings"];
+
+                    if (settings != null)
+                    {
                         if (settings["AllowedPrinters"] is JsonArray allowedArr)
                         {
                             foreach (var item in allowedArr)
@@ -173,10 +196,11 @@ namespace PrintAgent
                 });
             }
             PrintersListBox.ItemsSource = _printers;
+        }
 
-            ChkMinimizeToTray.IsChecked = _minimizeToTray;
-            ChkAutoStart.IsChecked = _autoStart;
-            ChkShowNotifications.IsChecked = _showNotifications;
+        private void BtnRefreshPrinters_Click(object sender, RoutedEventArgs e)
+        {
+            LoadPrinters();
         }
 
         private void Setting_Changed(object sender, RoutedEventArgs e)
