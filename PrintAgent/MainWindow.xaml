@@ -17,6 +17,7 @@
         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
             <Ellipse x:Name="StatusIndicator" Width="16" Height="16" Fill="Red" Margin="0,0,10,0"/>
             <TextBlock x:Name="StatusText" Text="Bağlantı Yok" VerticalAlignment="Center" FontWeight="Bold"/>
+            <Button x:Name="BtnForceReconnect" Content="Tekrar Bağlan" Margin="15,0,0,0" Padding="10,2" Click="BtnForceReconnect_Click" Visibility="Collapsed"/>
         </StackPanel>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">

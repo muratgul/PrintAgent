@@ -53,6 +53,7 @@ namespace PrintAgent
             // RACE CONDITION FIX: State might have changed before we subscribed
             StatusIndicator.Fill = EventBus.IsConnected ? System.Windows.Media.Brushes.LimeGreen : System.Windows.Media.Brushes.Red;
             StatusText.Text = EventBus.IsConnected ? "Bağlı" : "Bağlantı Yok";
+            BtnForceReconnect.Visibility = EventBus.IsConnected ? Visibility.Collapsed : Visibility.Visible;
 
             SetupNotifyIcon();
             
@@ -62,6 +63,7 @@ namespace PrintAgent
                 {
                     StatusIndicator.Fill = isConnected ? System.Windows.Media.Brushes.LimeGreen : System.Windows.Media.Brushes.Red;
                     StatusText.Text = isConnected ? "Bağlı" : "Bağlantı Yok";
+                    BtnForceReconnect.Visibility = isConnected ? Visibility.Collapsed : Visibility.Visible;
                     if (_notifyIcon != null)
                     {
                         _notifyIcon.Icon = isConnected ? _iconConnected : _iconDisconnected;
@@ -201,6 +203,21 @@ namespace PrintAgent
         private void BtnRefreshPrinters_Click(object sender, RoutedEventArgs e)
         {
             LoadPrinters();
+        }
+
+        private void BtnForceReconnect_Click(object sender, RoutedEventArgs e)
+        {
+            BtnForceReconnect.IsEnabled = false;
+            EventBus.RequestForceReconnect();
+            
+            // Re-enable after a short delay to prevent spam
+            System.Threading.Tasks.Task.Delay(2000).ContinueWith(_ =>
+            {
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    BtnForceReconnect.IsEnabled = true;
+                }));
+            });
         }
 
         private void Setting_Changed(object sender, RoutedEventArgs e)

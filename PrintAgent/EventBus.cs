@@ -20,5 +20,12 @@ namespace PrintAgent
         {
             ActivityLogged?.Invoke(title, message);
         }
+
+        public static event Action? ForceReconnectRequested;
+
+        public static void RequestForceReconnect()
+        {
+            ForceReconnectRequested?.Invoke();
+        }
     }
 }

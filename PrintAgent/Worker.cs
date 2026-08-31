@@ -12,6 +12,7 @@ public class Worker : BackgroundService
     private readonly IConfiguration _configuration;
     private HubConnection? _hubConnection;
     private readonly string _agentName = Environment.MachineName;
+    private CancellationTokenSource? _delayCts;
 
     public Worker(ILogger<Worker> logger, IConfiguration configuration)
     {
@@ -151,6 +152,15 @@ public class Worker : BackgroundService
             }
         });
 
+        EventBus.ForceReconnectRequested += () => 
+        {
+            if (_hubConnection?.State == HubConnectionState.Disconnected)
+            {
+                _logger.LogInformation("Manuel bağlantı isteği alındı, yeniden bağlanılıyor...");
+                _delayCts?.Cancel();
+            }
+        };
+
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -176,7 +186,17 @@ public class Worker : BackgroundService
                     }
                 }
 
-                await Task.Delay(5000, stoppingToken);
+                using (_delayCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken))
+                {
+                    try
+                    {
+                        await Task.Delay(5000, _delayCts.Token);
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        // Cancelled due to manual reconnect or stopping token
+                    }
+                }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
