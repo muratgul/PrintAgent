@@ -278,13 +278,13 @@ namespace PrintAgent
 
         private void BtnTestPrint_Click(object sender, RoutedEventArgs e)
         {
-            var btn = sender as Button;
-            string? printerName = btn?.Tag?.ToString();
+            var fwElement = sender as FrameworkElement;
+            string? printerName = fwElement?.Tag?.ToString();
             
-            if (string.IsNullOrEmpty(printerName) && btn?.DataContext != null)
+            if (string.IsNullOrEmpty(printerName) && fwElement?.DataContext != null)
             {
                 // Fallback to dynamic or reflection if type match fails
-                dynamic dc = btn.DataContext;
+                dynamic dc = fwElement.DataContext;
                 try { printerName = dc.Name; } catch { }
             }
             
@@ -318,7 +318,8 @@ namespace PrintAgent
             }
             else
             {
-                string debugInfo = $"btnIsNull: {btn == null}, dcType: {btn?.DataContext?.GetType().Name}, tagType: {btn?.Tag?.GetType().Name}";
+                string senderType = sender != null ? sender.GetType().FullName ?? "unknown" : "null";
+                string debugInfo = $"senderType: {senderType}, fwIsNull: {fwElement == null}, dcType: {fwElement?.DataContext?.GetType().Name}, tagType: {fwElement?.Tag?.GetType().Name}";
                 System.Windows.MessageBox.Show($"Yazıcı adı alınamadı. Debug: {debugInfo}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
