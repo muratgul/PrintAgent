@@ -279,7 +279,8 @@ namespace PrintAgent
         private void BtnTestPrint_Click(object sender, RoutedEventArgs e)
         {
             var btn = sender as Button;
-            var printerName = btn?.Tag?.ToString();
+            var printerModel = btn?.DataContext as PrinterModel;
+            var printerName = printerModel?.Name;
             
             if (!string.IsNullOrEmpty(printerName))
             {
